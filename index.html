@@ -27,7 +27,7 @@
             margin-bottom: 5px;
         }
 
-        .form-group input {
+        .form-group input, select {
             width: 100%;
             padding: 8px;
             box-sizing: border-box;
@@ -112,13 +112,14 @@
 
             }, 500);
 
+
             ed("encbtn").onclick = async function () {
 
                 const datastr = ed("encData").value;
                 const data = JSON.parse(datastr);
 
                 try {
-                    var res1 = await axios.post('/moise/sp/encCertRequest', data, {
+                    var res1 = await axios.post(get_env() + '/moise/sp/encCertRequest', data, {
                         headers: {
                             'Content-Type': 'application/json'
                         }
@@ -139,7 +140,7 @@
                 const datastr = ed("encData").value;
 
                 try {
-                    var res1 = await axios.post('/moise/sp/encCertResult', data, {
+                    var res1 = await axios.post(get_env() + '/moise/sp/encCertResult', data, {
                         headers: {
                             'Content-Type': 'application/json'
                         }
@@ -159,7 +160,7 @@
                 ed("decData").value = JSON.stringify(data);
 
                 try {
-                    var res1 = await axios.post('/moise/sp/decRequest', data, {
+                    var res1 = await axios.post(get_env() + '/moise/sp/decRequest', data, {
                         headers: {
                             'Content-Type': 'application/json'
                         }
@@ -178,7 +179,7 @@
                 ed("decQData").value = JSON.stringify(data, null, 2);
 
                 try {
-                    var res1 = await axios.post('/moise/sp/decRequestResult', data, {
+                    var res1 = await axios.post(get_env() + '/moise/sp/decRequestResult', data, {
                         headers: {
                             'Content-Type': 'application/json'
                         }
@@ -196,7 +197,7 @@
                 ed("certsData").value = JSON.stringify(data, null, 2);
 
                 try {
-                    var res1 = await axios.post('/moise/sp/certStatus', data, {
+                    var res1 = await axios.post(get_env() + '/moise/sp/certStatus', data, {
                         headers: {
                             'Content-Type': 'application/json'
                         }
@@ -214,7 +215,7 @@
                 ed("certsData").value = JSON.stringify(data, null, 2);
 
                 try {
-                    var res1 = await axios.post('/moise/sp/batchCertStatus', data, {
+                    var res1 = await axios.post(get_env() + '/moise/sp/batchCertStatus', data, {
                         headers: {
                             'Content-Type': 'application/json'
                         }
@@ -354,6 +355,10 @@
 
         function get_service_id() {
             return ev("sp_service_id");
+        }
+
+        function get_env() {
+            return ev("env");
         }
 
         function base64ToBin(base64String) {
@@ -641,6 +646,13 @@
 <body>
 <div class="container">
     <h2>Enter Service Details</h2>
+    <div class="form-group">
+        <label for="env">Env:</label>
+        <select class="save" id="env" name="env" required>
+            <option value="https://fidoapi.moi.gov.tw" selected>正式</option>
+            <option value="https://fidoapi-test.moi.gov.tw">測試</option>
+        </select>
+    </div>
     <div class="form-group">
         <label for="sp_service_id">Service ID:</label>
         <input type="text" class="save" id="sp_service_id" name="sp_service_id" required>
