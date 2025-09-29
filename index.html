@@ -1,0 +1,813 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>加解密功能測試網頁</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+        }
+
+        .form-group button {
+            padding: 10px 15px;
+            background-color: #28a745;
+            border: none;
+            color: white;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        .form-group button:hover {
+            background-color: #218838;
+        }
+    </style>
+    <script src="js/forge.min.js"></script>
+    <script src="js/axios.min.js"></script>
+
+    <script src="js/qrcode.min.js"></script>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", async function () {
+            // Load saved values from local storage
+            document.querySelectorAll(".save").forEach(n => {
+                n.value = localStorage.getItem(n.id);
+            });
+
+            // Save values to local storage on change
+
+            document.querySelectorAll(".save").forEach(n => {
+                n.addEventListener("keyup", function () {
+                    localStorage.setItem(n.id, this.value);
+                });
+
+                n.addEventListener("change", function () {
+                    localStorage.setItem(n.id, this.value);
+                });
+            });
+
+            document.querySelectorAll(".genc").forEach(n => {
+                n.addEventListener("keyup", async function () {
+                    ed("encData").value = JSON.stringify(await generateEncRequest(), null, 2);
+                });
+            });
+
+            document.querySelectorAll(".gencq").forEach(n => {
+                n.addEventListener("keyup", async function () {
+                    ed("encQData").value = JSON.stringify(await generateEncRequestQuery(), null, 2);
+                });
+            });
+
+            document.querySelectorAll(".gend").forEach(n => {
+                n.addEventListener("keyup", async function () {
+                    ed("decData").value = JSON.stringify(await generateDecRequest(), null, 2);
+                });
+            });
+
+            document.querySelectorAll(".gendq").forEach(n => {
+                n.addEventListener("keyup", async function () {
+                    ed("decQData").value = JSON.stringify(await generateDecRequestQuery(), null, 2);
+                });
+            });
+
+            document.querySelectorAll(".certs").forEach(n => {
+                n.addEventListener("keyup", async function () {
+                    ed("certsData").value = JSON.stringify(await generateCertRequestQuery(), null, 2);
+                });
+            });
+
+            document.querySelectorAll(".batchcerts").forEach(n => {
+                n.addEventListener("keyup", async function () {
+                    ed("batchCertsData").value = JSON.stringify(await generateBatchCertRequestQuery(), null, 2);
+                });
+            });
+
+
+            setTimeout(async function () {
+                ed("encData").value = JSON.stringify(await generateEncRequest(), null, 2);
+
+            }, 500);
+
+            ed("encbtn").onclick = async function () {
+
+                const datastr = ed("encData").value;
+                const data = JSON.parse(datastr);
+
+                try {
+                    var res1 = await axios.post('/moise/sp/encCertRequest', data, {
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    onenccallback(res1.data);
+                    console.log(res1.data);
+                } catch (error) {
+                    console.error('Error making POST request:', error);
+                    alert('Error making POST request:' + error);
+                }
+            };
+
+            ed("encqbtn").onclick = async function () {
+
+                const data = await generateEncRequestQuery();
+                ed("encQData").value = JSON.stringify(data, null, 2);
+
+                const datastr = ed("encData").value;
+
+                try {
+                    var res1 = await axios.post('/moise/sp/encCertResult', data, {
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    onencquerycallback(res1.data);
+                    console.log(res1.data);
+                } catch (error) {
+                    console.error('Error making POST request:', error);
+                    alert('Error making POST request:' + error);
+                }
+            };
+
+            ed("decbtn").onclick = async function () {
+
+//                const data = JSON.parse(ev("decData"));
+                const data = await generateDecRequest();
+                ed("decData").value = JSON.stringify(data);
+
+                try {
+                    var res1 = await axios.post('/moise/sp/decRequest', data, {
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    ondeccallback(res1.data);
+                    console.log(res1.data);
+                } catch (error) {
+                    console.error('Error making POST request:', error);
+                    alert('Error making POST request:' + error);
+                }
+            };
+
+
+            ed("decqbtn").onclick = async function () {
+                const data = await generateDecRequestQuery();
+                ed("decQData").value = JSON.stringify(data, null, 2);
+
+                try {
+                    var res1 = await axios.post('/moise/sp/decRequestResult', data, {
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    ondecquerycallback(res1.data);
+                    console.log(res1.data);
+                } catch (error) {
+                    console.error('Error making POST request:', error);
+                    alert('Error making POST request:' + error);
+                }
+            };
+
+            ed("certsbtn").onclick = async function () {
+                const data = await generateCertRequestQuery();
+                ed("certsData").value = JSON.stringify(data, null, 2);
+
+                try {
+                    var res1 = await axios.post('/moise/sp/certStatus', data, {
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    oncertStatusCallback(res1.data);
+                    console.log(res1.data);
+                } catch (error) {
+                    console.error('Error making POST request:', error);
+                    alert('Error making POST request:' + error);
+                }
+            };
+
+            ed("batchcertsbtn").onclick = async function () {
+                const data = await generateBatchCertRequestQuery();
+                ed("certsData").value = JSON.stringify(data, null, 2);
+
+                try {
+                    var res1 = await axios.post('/moise/sp/batchCertStatus', data, {
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    oncertBatchStatusCallback(res1.data);
+                    console.log(res1.data);
+                } catch (error) {
+                    console.error('Error making POST request:', error);
+                    alert('Error making POST request:' + error);
+                }
+            };
+
+
+        });
+
+
+    </script>
+    <script>
+
+        async function sha256(text) {
+            const encoder = new TextEncoder();
+            const data = encoder.encode(text);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            return hashArray;
+        }
+
+        async function encryptAESGCM(key, text) {
+            const iv = crypto.getRandomValues(new Uint8Array(12)); // Generate a random IV
+
+
+            let data = null;
+
+            if (typeof (text) == "string") {
+                const encoder = new TextEncoder();
+                data = encoder.encode(text);
+            } else if (text.buffer) {
+                data = text.buffer;
+            } else {
+                data = text;
+            }
+
+
+            const cryptoKey = await crypto.subtle.importKey(
+                'raw',
+                key,
+                'AES-GCM',
+                false,
+                ['encrypt']
+            );
+
+            const encryptedData = await crypto.subtle.encrypt(
+                {
+                    name: 'AES-GCM',
+                    iv: iv,
+                    tagLength: 128,
+                },
+                cryptoKey,
+                data
+            );
+
+            // const enc = encryptedData.slice(0,encryptedData.byteLength - 12);
+            const encryptedHex = Array.from(concatUint8Arrays(iv, new Uint8Array(encryptedData)))
+                .map(b => b.toString(16).padStart(2, '0'))
+                .join('');
+
+            return encryptedHex;
+
+        }
+
+
+        function genCertFromB64(base64PublicKey) {
+
+            // PEM headers and footers for an RSA public key
+            const pemHeader = "-----BEGIN CERTIFICATE-----\n";
+            const pemFooter = "\n-----END CERTIFICATE-----";
+            //
+            // // Split the base64 string into lines of 64 characters each
+            const base64KeyLines = base64PublicKey.match(/.{1,64}/g).join('\n');
+            //
+            // // Combine the header, the base64 lines, and the footer
+            const pemPublicKey = pemHeader + base64KeyLines + pemFooter;
+            return pemPublicKey;
+
+        }
+
+
+        function encryptPKCS7CMS(cert, data) {
+
+            let decrypting = null;
+            const recipientCert = forge.pki.certificateFromPem(genCertFromB64(cert));
+            // Data to encrypt
+
+            // Encrypt data using CMS
+            const p7 = forge.pkcs7.createEnvelopedData();
+            p7.addRecipient(recipientCert);
+            p7.content = forge.util.createBuffer(data, 'utf8');
+            p7.encrypt();
+
+            const der = forge.asn1.toDer(p7.toAsn1()).getBytes();
+            return btoa(der);
+
+        }
+
+        function encryptPKCS1(certb64, data) {
+
+            let decrypting = null;
+            const cert = forge.pki.certificateFromPem(genCertFromB64(certb64));
+            // Data to encrypt
+            const publicKey = cert.publicKey;
+
+            const bytes = forge.util.encodeUtf8(data);
+
+            // Encrypt the data using the public key
+            const encryptedData = publicKey.encrypt( bytes,'RSAES-PKCS1-V1_5');
+
+            let ret = forge.util.encode64(encryptedData);
+            return ret;
+        }
+
+
+        function concatUint8Arrays(array1, array2) {
+            const concatenatedArray = new Uint8Array(array1.length + array2.length);
+            concatenatedArray.set(array1, 0);
+            concatenatedArray.set(array2, array1.length);
+            return concatenatedArray;
+
+        }
+
+        async function shaenc(key, text) {
+
+            const hashArray = await sha256(text);
+            const hashHex = hashArray.map(byte => byte.toString(16).padStart(2, '0')).join('');
+            const encryptedHex = await encryptAESGCM(key, hashHex);
+            return encryptedHex;
+        }
+
+        function get_service_id() {
+            return ev("sp_service_id");
+        }
+
+        function base64ToBin(base64String) {
+            base64String = base64String.replace(/-/g, '+').replace(/_/g, '/'); // Replace URL-safe characters
+            var binary_string = window.atob(base64String);
+            var len = binary_string.length;
+            var bytes = new Uint8Array(len);
+            for (var i = 0; i < len; i++) {
+                bytes[i] = binary_string.charCodeAt(i);
+            }
+            return bytes;
+        }
+
+        function get_key() {
+            return base64ToBin(ev("api_key").trim());
+        }
+
+        function ev(id) {
+            return document.getElementById(id).value;
+        }
+
+        function ed(id) {
+            return document.getElementById(id);
+        }
+
+        async function generateEncRequest() {
+            const encryptionTypes = [ 'PKCS#1' , 'PKCS#7' ];
+            const randomType = encryptionTypes[Math.floor(Math.random() * encryptionTypes.length)];
+
+            const data = {
+                transaction_id: crypto.randomUUID(),
+                sp_service_id: get_service_id(),
+                id_num: ev("enc_person_id"),
+                hint: ev("enc_hint"),
+                device_user_def_desc: ev("enc_device_user_def_desc"),
+                sign_info: {
+                    sign_type: randomType,
+                    sign_data: encodeStr(ev("enc_sign_data")),
+                    hash_algorithm: "SHA256",
+                    tbs_encoding: "base64",
+                },
+                op_code: "getEncryptionCert",
+                op_mode: "PUSH",
+                time_limit: 60,
+                sp_checksum: null
+            };
+            const text = data.transaction_id + data.sp_service_id
+                + data.id_num;
+            data.sp_checksum = await shaenc(get_key(), text);
+
+            return data;
+        }
+
+        async function onenccallback(res) {
+
+            ed("encDataResult").value = JSON.stringify(res, null, 2);
+
+            const base64data = res.result.sp_ticket.split(".")[0];
+            console.log(base64data)
+            var spTicketObjString = forge.util.decode64(base64data);
+            console.log(spTicketObjString);
+            spTicketObjString = spTicketObjString.substring(0, spTicketObjString.lastIndexOf("}") + 1);
+
+            const firstData = JSON.parse(spTicketObjString);
+            console.log("first data:" + JSON.stringify(firstData));
+            ed("enc_query_sp_ticket_id").value = firstData.sp_ticket_id;
+            ed("encQData").value =
+                JSON.stringify(await generateEncRequestQuery(), null, 2);
+
+            var apa=btoa(JSON.stringify({"sp_id": firstData.sp_ticket_id,
+                "sp_name": firstData.sp_name,
+                "sign_data": firstData.sign_info.sign_data,
+                "sign_type": firstData.sign_info.sign_type,
+                "op_code":firstData.op_code,
+                "hint": firstData.hint}))
+                .replace(/\+/g, '-')
+                .replace(/\//g, '_')
+                .replace(/=+$/, '');
+
+
+
+            ed("encA2A").href=("mobilemoica://fido.moi.gov.tw/pt/a2a/action?opt="+firstData.op_code+"&data="+apa+"&rtn_url=xxxx&rtn_val=xxxxx");
+            ed("encA2A").innerHTML=("mobilemoica://fido.moi.gov.tw/pt/a2a/action?opt="+firstData.op_code+"&data="+apa+"&rtn_url=xxxx&rtn_val=xxxxx");
+
+            ed("encQR").innerHTML= "";
+            new QRCode(document.getElementById('encQR'), {
+                text: JSON.stringify({"sp_id": firstData.sp_ticket_id,
+                    "sp_name": firstData.sp_name,
+                    "sign_data": firstData.sign_info.sign_data,
+                    "sign_type": firstData.sign_info.sign_type,
+                    "op_code":firstData.op_code,
+                    "hint": firstData.hint}),
+                width: 256,
+                height: 256,
+                colorDark : '#000',
+                colorLight : '#fff',
+                correctLevel : QRCode.CorrectLevel.M
+            });
+
+
+        }
+
+        async function generateEncRequestQuery() {
+            const data = {
+                transaction_id: crypto.randomUUID(),
+                sp_service_id: get_service_id(),
+                sp_ticket_id: ev("enc_query_sp_ticket_id"),
+                sp_checksum: null
+            };
+
+            const text = data.transaction_id + data.sp_service_id + data.sp_ticket_id;
+            data.sp_checksum = await shaenc(get_key(), text);
+
+            return data;
+        }
+
+
+        async function onencquerycallback(res) {
+            ed("encQResData").value = JSON.stringify(res, null, 2);
+
+            ed("dec_enc_sn").value = res.result.cert_sn;
+            ed("dec_cert").value = res.result.cert;
+
+            ed("decData").value = JSON.stringify(await generateDecRequest(), null, 2);
+        }
+
+
+        async function generateDecRequest() {
+            const encryptionTypes = ['PKCS#1', 'PKCS#7'];
+            const randomType = encryptionTypes[Math.floor(Math.random() * encryptionTypes.length)];
+
+            var encrypted_data = null;
+
+            if (randomType == "PKCS#1") {
+                encrypted_data = encryptPKCS1(ev("dec_cert"), ev("dec_content"));
+            } else {
+                encrypted_data = encryptPKCS7CMS(ev("dec_cert"), ev("dec_content"));
+
+            }
+
+            const data = {
+                transaction_id: crypto.randomUUID(),
+                sp_service_id: get_service_id(),
+                cert_sn: ev("dec_enc_sn"),
+                hint: ev("dec_hint"),
+                encrypted_info: {
+                    encrypted_data,
+                    encrypted_type: randomType,
+                    encrypted_encoding: "base64"
+                },
+                op_code: "decryptionData",
+                op_mode: "PUSH",
+                time_limit: 60,
+                sp_checksum: null
+            };
+
+            const text = data.transaction_id + data.sp_service_id +
+                data.cert_sn;
+            data.sp_checksum = await shaenc(get_key(), text);
+
+            return data;
+        }
+
+
+        async function ondeccallback(res) {
+
+            ed("decResData").value = JSON.stringify(res, null, 2);
+
+            const base64data = res.result.sp_ticket.split(".")[0];
+            console.log(base64data)
+            var spTicketObjString = forge.util.decode64(base64data);
+            console.log(spTicketObjString);
+            spTicketObjString = spTicketObjString.substring(0, spTicketObjString.lastIndexOf("}") + 1);
+
+            const firstData = JSON.parse(spTicketObjString);
+            console.log("first data:" + JSON.stringify(firstData));
+            ed("dec_query_sp_ticket_id").value = firstData.sp_ticket_id;
+
+            ed("decQData").value = JSON.stringify(await generateDecRequestQuery(), null, 2);
+
+            var apa=btoa(JSON.stringify({"sp_id": firstData.sp_ticket_id,
+                "sp_name": firstData.sp_name,
+                "hint": firstData.hint}))
+                .replace(/\+/g, '-')
+                .replace(/\//g, '_')
+                .replace(/=+$/, '');
+
+            ed("decA2A").href= "mobilemoica://fido.moi.gov.tw/pt/a2a/action?opt="+firstData.op_code+"&data="+apa+"&rtn_url=xxxx&rtn_val=xxxxx";
+            ed("decA2A").innerHTML= "mobilemoica://fido.moi.gov.tw/pt/a2a/action?opt="+firstData.op_code+"&data="+apa+"&rtn_url=xxxx&rtn_val=xxxxx";
+
+
+            ed("decQR").innerHTML= "";
+            new QRCode(document.getElementById('decQR'), {
+                text: JSON.stringify({"sp_id": firstData.sp_ticket_id,
+                    "sp_name": firstData.sp_name,
+                    "op_code":firstData.op_code,
+                    "hint": firstData.hint}),
+                width: 256,
+                height: 256,
+                colorDark : '#000',
+                colorLight : '#fff',
+                correctLevel : QRCode.CorrectLevel.M
+            });
+
+
+        }
+
+        async function generateDecRequestQuery() {
+            const data = {
+                transaction_id: crypto.randomUUID(),
+                sp_service_id: get_service_id(),
+                sp_ticket_id: ev("dec_query_sp_ticket_id"),
+                sp_checksum: null
+            };
+
+            const text = data.transaction_id + data.sp_service_id + data.sp_ticket_id;
+            data.sp_checksum = await shaenc(get_key(), text);
+
+            return data;
+        }
+
+        async function generateCertRequestQuery() {
+            const data = {
+                transaction_id: crypto.randomUUID(),
+                sp_service_id: get_service_id(),
+                cert_sn: ev("query_cert_sn"),
+                sp_checksum: null
+            };
+
+            const text = data.transaction_id + data.sp_service_id + data.cert_sn;
+            data.sp_checksum = await shaenc(get_key(), text);
+
+            return data;
+        }
+
+        async function generateBatchCertRequestQuery() {
+            const data = {
+                transaction_id: crypto.randomUUID(),
+                sp_service_id: get_service_id(),
+                cert_sns: ev("query_cert_sns"),
+                sp_checksum: null
+            };
+
+            if (data.cert_sns.trim() == "") {
+                delete data.cert_sns;
+            } else {
+                data.cert_sns = data.cert_sns.split(",");
+            }
+
+            const text = "batchcertstatus" + data.transaction_id + data.sp_service_id;
+            data.sp_checksum = await shaenc(get_key(), text);
+
+            return data;
+        }
+
+
+        async function ondecquerycallback(res) {
+            ed("decQResData").value = JSON.stringify(res, null, 2);
+            ed("decText").value ="";
+            if (res.result.decrypted_data) {
+                ed("decText").value = fromBinary(res.result.decrypted_data);
+            }
+        }
+
+        function encodeStr(str){
+            return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g,
+                (m,p)=> String.fromCharCode(parseInt(p,16))));
+        }
+
+        function fromBinary(encoded){
+            return decodeURIComponent(atob(encoded).split('').map((c)=>  "%"+ ('00'+c.charCodeAt(0).toString(16)).slice(-2)
+            ).join(""));
+        }
+
+        async function oncertStatusCallback(res) {
+            ed("certsResData").value = JSON.stringify(res, null, 2);
+        }
+
+        async function oncertBatchStatusCallback(res) {
+            ed("batchCertsDataResData").value = JSON.stringify(res, null, 2);
+        }
+
+    </script>
+</head>
+<body>
+<div class="container">
+    <h2>Enter Service Details</h2>
+    <div class="form-group">
+        <label for="sp_service_id">Service ID:</label>
+        <input type="text" class="save" id="sp_service_id" name="sp_service_id" required>
+    </div>
+    <div class="form-group">
+        <label for="api_key">API Key:</label>
+        <input type="password" class="save" id="api_key" name="api_key" required>
+    </div>
+</div>
+
+<div class="container">
+    <h2>呼叫註冊(取得)加密憑證</h2>
+    <div class="form-group">
+        <label for="person_id">身分證字號:</label>
+        <input type="text" class="save genc" id="enc_person_id">
+    </div>
+    <div class="form-group">
+        <label for="sign_data">Sign Data:</label>
+        <input type="text" class="save genc" id="enc_sign_data">
+    </div>
+    <div class="form-group">
+        <label for="enc_device_user_def_desc">裝置名稱:</label>
+        <input type="text" class="save genc" id="enc_device_user_def_desc">
+    </div>    
+
+    <div class="form-group">
+        <label for="sign_data">提示字:</label>
+        <input type="text" class="save genc" id="enc_hint" value="加密授權">
+    </div>
+
+
+    <p>url: /moise/sp/encCertRequest</p>
+    <textarea id="encData" rows="20" style="width: 100%;">
+
+        </textarea>
+
+    <div class="form-group">
+        <button type="submit" id="encbtn">呼叫API</button>
+    </div>
+
+    <p>呼叫結果：</p>
+    <textarea id="encDataResult" rows="20" style="width: 100%;">
+
+        </textarea>
+    <p><a id='encA2A' href=''>App2App link</a></p>
+    <p><div id='encQR' ></div></p>
+
+</div>
+
+<div class="container">
+    <h2>呼叫註冊(取得)加密憑證結果查詢</h2>
+    <div class="form-group">
+        <label for="person_id">sp_ticket_id:</label>
+        <input type="text" class="save gencq" id="enc_query_sp_ticket_id">
+    </div>
+    <p>url: /moise/sp/encCertResult</p>
+    <textarea id="encQData" rows="20" style="width: 100%;">
+
+        </textarea>
+
+    <div class="form-group">
+        <button type="submit" id="encqbtn">呼叫加密結果查詢</button>
+    </div>
+
+    <p>呼叫結果：</p>
+    <textarea id="encQResData" rows="20" style="width: 100%;">
+
+        </textarea>
+</div>
+
+
+<div class="container">
+    <h2>呼叫解密</h2>
+    <div class="form-group">
+        <label for="person_id">enc_sn:</label>
+        <input type="text" class="save gend" id="dec_enc_sn">
+    </div>
+
+    <div class="form-group">
+        <label for="sign_data">提示字:</label>
+        <input type="text" class="save gend" id="dec_hint" value="解密處理">
+    </div>
+
+    <div class="form-group">
+        <label for="person_id">cert: （不會送出，純粹加密用）</label>
+        <textarea id="dec_cert" class="save gend" rows="2" style="width: 100%;">
+            </textarea>
+    </div>
+    <div class="form-group">
+        <label for="person_id">加密字串（byte也可以，這邊只是測試）：</label>
+        <input type="text" class="save gend" id="dec_content">
+    </div>
+
+    <p>url: /moise/sp/decRequest</p>
+    <textarea id="decData" rows="20" style="width: 100%;"></textarea>
+
+    <div class="form-group">
+        <button type="submit" id="decbtn">呼叫解密</button>
+    </div>
+
+    <p>呼叫結果：</p>
+    <textarea id="decResData" rows="20" style="width: 100%;">
+
+        </textarea>
+
+    <p><a id='decA2A' href=''>App2App link</a></p>
+    <p><div id='decQR' ></div></p>
+
+
+</div>
+
+
+<div class="container">
+    <h2>呼叫解密結果查詢</h2>
+    <div class="form-group">
+        <label for="person_id">sp_ticket_id:</label>
+        <input type="text" class="save gendq" id="dec_query_sp_ticket_id">
+    </div>
+    <p>url: /moise/sp/decRequestResult</p>
+    <textarea id="decQData" rows="20" style="width: 100%;"></textarea>
+
+    <div class="form-group">
+        <button type="submit" id="decqbtn">呼叫解密結果查詢</button>
+    </div>
+
+    <p>呼叫結果：</p>
+    <textarea id="decQResData" rows="20" style="width: 100%;"></textarea>
+
+    <p>原始密文:</p>
+    <textarea id="decText" rows="3" style="width: 100%;"></textarea>
+</div>
+
+<div class="container">
+    <h2>憑證狀態查詢</h2>
+    <div class="form-group">
+        <label>cert_sn:</label>
+        <input type="text" class="save certs" id="query_cert_sn">
+    </div>
+    <p>url: /moise/sp/certStatus </p>
+    <textarea id="certsData" rows="20" style="width: 100%;"></textarea>
+
+    <div class="form-group">
+        <button type="submit" id="certsbtn">呼叫憑證狀態查詢查詢</button>
+    </div>
+
+    <p>呼叫結果：</p>
+    <textarea id="certsResData" rows="20" style="width: 100%;"></textarea>
+</div>
+
+<div class="container">
+    <h2>批次憑證狀態查詢</h2>
+    <div class="form-group">
+        <label>certs_sns:</label>
+        <input type="text" class="save batchcerts" id="query_cert_sns">
+        <p>範例: xxx,xxx,xxx </p>
+    </div>
+    <p>url: /moise/sp/batchCertStatus </p>
+    <textarea id="batchCertsData" rows="20" style="width: 100%;"></textarea>
+
+    <div class="form-group">
+        <button type="submit" id="batchcertsbtn">呼叫批次憑證狀態查詢查詢</button>
+    </div>
+
+    <p>呼叫結果：</p>
+    <textarea id="batchCertsDataResData" rows="20" style="width: 100%;"></textarea>
+</div>
+
+
+</body>
+</html>
